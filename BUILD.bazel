@@ -1,0 +1,26 @@
+load("@gazelle//:def.bzl", "gazelle", "gazelle_binary")
+
+# gazelle:prefix github.com/cgrindel/ruby_gazelle_plugin
+
+gazelle_binary(
+    name = "gazelle_bin",
+    languages = [
+        "//gazelle",
+    ],
+)
+
+gazelle(
+    name = "update_build_files",
+    gazelle = ":gazelle_bin",
+)
+
+gazelle(
+    name = "update_go_deps",
+    args = [
+        "-from_file=go.mod",
+        "-to_macro=deps.bzl%go_dependencies",
+        "-prune",
+    ],
+    command = "update-repos",
+    gazelle = ":gazelle_bin",
+)

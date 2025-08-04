@@ -1,0 +1,19 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gazelle",
+    srcs = [
+        "language.go",
+        "plugin.go",
+    ],
+    importpath = "github.com/cgrindel/ruby_gazelle_plugin/gazelle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@gazelle//config",
+        "@gazelle//label",
+        "@gazelle//language",
+        "@gazelle//repo",
+        "@gazelle//resolve",
+        "@gazelle//rule",
+    ],
+)
