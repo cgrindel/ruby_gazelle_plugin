@@ -1,11 +1,62 @@
-load("@gazelle//:def.bzl", "gazelle", "gazelle_binary")
+load(
+    "@cgrindel_bazel_starlib//bzlformat:defs.bzl",
+    "bzlformat_missing_pkgs",
+    "bzlformat_pkg",
+)
+load("@cgrindel_bazel_starlib//bzltidy:defs.bzl", "tidy")
+load(
+    "@cgrindel_bazel_starlib//shlib/rules:execute_binary.bzl",
+    "execute_binary",
+)
+load("@cgrindel_bazel_starlib//updatesrc:defs.bzl", "updatesrc_update_all")
+load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary")
+
+# MARK: - Tidy / Update Source Files
+
+updatesrc_update_all(name = "update_all")
+
+tidy(
+    name = "tidy",
+    targets = [
+        ":bzlformat_missing_pkgs_fix",
+        ":update_all",
+        ":go_mod_tidy",
+        ":update_build_files",
+    ],
+)
+
+# This is meant to be fast and convenient to quickly update the source files
+# with the latest.
+tidy(
+    name = "update_files",
+    targets = [
+        ":update_all",
+        ":update_build_files",
+    ],
+)
+
+tidy(
+    name = "upgrade_go_deps",
+    targets = [
+        ":go_get_latest",
+        ":go_mod_tidy",
+    ],
+)
+
+# MARK: - Bazel Starlark Lint and Formatting
+
+bzlformat_pkg(name = "bzlformat")
+
+bzlformat_missing_pkgs(name = "bzlformat_missing_pkgs")
+
+# MARK: - Gazelle
 
 # gazelle:prefix github.com/cgrindel/ruby_gazelle_plugin
 
 gazelle_binary(
     name = "gazelle_bin",
-    languages = [
-        "//gazelle",
+    languages = DEFAULT_LANGUAGES + [
+        "@bazel_skylib_gazelle_plugin//bzl",
     ],
 )
 
@@ -23,4 +74,28 @@ gazelle(
     ],
     command = "update-repos",
     gazelle = ":gazelle_bin",
+)
+
+# MARK: - Go
+
+execute_binary(
+    name = "go_mod_tidy",
+    arguments = [
+        "mod",
+        "tidy",
+    ],
+    binary = "@rules_go//go",
+    execute_in_workspace = True,
+)
+
+execute_binary(
+    name = "go_get_latest",
+    arguments = [
+        "get",
+        "-t",
+        "-u",
+        "./...",
+    ],
+    binary = "@rules_go//go",
+    execute_in_workspace = True,
 )
