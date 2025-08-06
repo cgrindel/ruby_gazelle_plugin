@@ -1,10 +1,11 @@
-// Package ruby implements a Gazelle language extension for Ruby.
+// Package gazelle implements a Gazelle language extension for Ruby.
 // This package provides support for generating BUILD files for Ruby projects
 // using Bazel's Gazelle tool.
-package ruby
+package gazelle
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -16,61 +17,64 @@ import (
 
 const rubyName = "ruby"
 
-type rubyLang struct{}
+// RubyLang implements the Gazelle language interface for Ruby.
+type RubyLang struct {
+	language.BaseLang
+}
 
 // NewLanguage returns a new instance of the Ruby language extension.
 func NewLanguage() language.Language {
-	return &rubyLang{}
+	return &RubyLang{}
 }
 
-func (*rubyLang) Name() string {
+func (*RubyLang) Name() string {
 	return rubyName
 }
 
-func (*rubyLang) RegisterFlags(
+func (*RubyLang) RegisterFlags(
 	fs *flag.FlagSet, cmd string, c *config.Config,
 ) {
 }
 
-func (*rubyLang) CheckFlags(fs *flag.FlagSet, c *config.Config) error {
+func (*RubyLang) CheckFlags(fs *flag.FlagSet, c *config.Config) error {
 	return nil
 }
 
-func (*rubyLang) KnownDirectives() []string {
+func (*RubyLang) KnownDirectives() []string {
 	return nil
 }
 
-func (*rubyLang) Configure(c *config.Config, rel string, f *rule.File) {}
+func (*RubyLang) Configure(c *config.Config, rel string, f *rule.File) {}
 
-func (*rubyLang) Imports(
+func (*RubyLang) Imports(
 	c *config.Config, r *rule.Rule, f *rule.File,
 ) []resolve.ImportSpec {
 	return nil
 }
 
-func (*rubyLang) Embeds(r *rule.Rule, from label.Label) []label.Label {
+func (*RubyLang) Embeds(r *rule.Rule, from label.Label) []label.Label {
 	return nil
 }
 
-func (*rubyLang) Resolve(
+func (*RubyLang) Resolve(
 	c *config.Config,
 	ix *resolve.RuleIndex,
 	rc *repo.RemoteCache,
 	r *rule.Rule,
-	imports interface{},
+	imports any,
 	from label.Label,
 ) {
 }
 
-func (*rubyLang) GenerateRules(
+func (*RubyLang) GenerateRules(
 	args language.GenerateArgs,
 ) language.GenerateResult {
 	return language.GenerateResult{}
 }
 
-func (*rubyLang) Fix(c *config.Config, f *rule.File) {}
+func (*RubyLang) Fix(c *config.Config, f *rule.File) {}
 
-func (*rubyLang) Kinds() map[string]rule.KindInfo {
+func (*RubyLang) Kinds() map[string]rule.KindInfo {
 	return map[string]rule.KindInfo{
 		"rb_library": {
 			MatchAny: false,
@@ -114,10 +118,16 @@ func (*rubyLang) Kinds() map[string]rule.KindInfo {
 	}
 }
 
-func (*rubyLang) Loads() []rule.LoadInfo {
+func (*RubyLang) ApparentLoads(
+	moduleToApparentName func(string) string,
+) []rule.LoadInfo {
+	rulesRuby := moduleToApparentName("rules_ruby")
+	if rulesRuby == "" {
+		rulesRuby = "rules_ruby"
+	}
 	return []rule.LoadInfo{
 		{
-			Name:    "@rules_ruby//ruby:defs.bzl",
+			Name:    fmt.Sprintf("@%s//ruby:defs.bzl", rulesRuby),
 			Symbols: []string{"rb_library", "rb_binary", "rb_test"},
 		},
 	}
