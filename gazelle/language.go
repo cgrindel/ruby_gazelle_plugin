@@ -1,3 +1,6 @@
+// Package ruby implements a Gazelle language extension for Ruby.
+// This package provides support for generating BUILD files for Ruby projects
+// using Bazel's Gazelle tool.
 package ruby
 
 import (
@@ -24,7 +27,10 @@ func (*rubyLang) Name() string {
 	return rubyName
 }
 
-func (*rubyLang) RegisterFlags(fs *flag.FlagSet, cmd string, c *config.Config) {}
+func (*rubyLang) RegisterFlags(
+	fs *flag.FlagSet, cmd string, c *config.Config,
+) {
+}
 
 func (*rubyLang) CheckFlags(fs *flag.FlagSet, c *config.Config) error {
 	return nil
@@ -36,7 +42,9 @@ func (*rubyLang) KnownDirectives() []string {
 
 func (*rubyLang) Configure(c *config.Config, rel string, f *rule.File) {}
 
-func (*rubyLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
+func (*rubyLang) Imports(
+	c *config.Config, r *rule.Rule, f *rule.File,
+) []resolve.ImportSpec {
 	return nil
 }
 
@@ -44,10 +52,19 @@ func (*rubyLang) Embeds(r *rule.Rule, from label.Label) []label.Label {
 	return nil
 }
 
-func (*rubyLang) Resolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
+func (*rubyLang) Resolve(
+	c *config.Config,
+	ix *resolve.RuleIndex,
+	rc *repo.RemoteCache,
+	r *rule.Rule,
+	imports interface{},
+	from label.Label,
+) {
 }
 
-func (*rubyLang) GenerateRules(args language.GenerateArgs) language.GenerateResult {
+func (*rubyLang) GenerateRules(
+	args language.GenerateArgs,
+) language.GenerateResult {
 	return language.GenerateResult{}
 }
 
