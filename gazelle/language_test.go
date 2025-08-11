@@ -98,3 +98,55 @@ func TestApparentLoadsStructure(t *testing.T) {
 		t.Errorf("Expected load name %s, got %s", expectedName, loadInfo.Name)
 	}
 }
+
+func TestConvertRequireRelativeToLabel(t *testing.T) {
+	tests := []struct {
+		name           string
+		currentPackage string
+		requiredPath   string
+		expected       string
+	}{
+		{
+			name:           "simple file in subdirectory",
+			currentPackage: "foo/lib",
+			requiredPath:   "hello_world/version",
+			expected:       "//foo/lib/hello_world:version",
+		},
+		{
+			name:           "file in current directory",
+			currentPackage: "foo/lib",
+			requiredPath:   "version",
+			expected:       ":version",
+		},
+		{
+			name:           "nested subdirectory",
+			currentPackage: "foo/lib",
+			requiredPath:   "hello_world/sub/version",
+			expected:       "//foo/lib/hello_world/sub:version",
+		},
+		{
+			name:           "root package with subdirectory",
+			currentPackage: "",
+			requiredPath:   "hello_world/version",
+			expected:       "//hello_world:version",
+		},
+		{
+			name:           "root package current directory",
+			currentPackage: "",
+			requiredPath:   "version",
+			expected:       ":version",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// We need to access the function, so we'll need to expose it or test through GenerateRules
+			// For now, let's create a small wrapper to test the logic
+			got := gazelle.ConvertRequireRelativeToLabel(tt.currentPackage, tt.requiredPath)
+			if got != tt.expected {
+				t.Errorf("convertRequireRelativeToLabel(%q, %q) = %q, want %q",
+					tt.currentPackage, tt.requiredPath, got, tt.expected)
+			}
+		})
+	}
+}
