@@ -4,6 +4,7 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "gazelle",
     srcs = [
+        "generate.go",
         "language.go",
         "plugin.go",
     ],
@@ -21,9 +22,13 @@ go_library(
 
 go_test(
     name = "gazelle_test",
-    srcs = ["language_test.go"],
+    srcs = [
+        "generate_test.go",
+        "language_test.go",
+    ],
     deps = [
         ":gazelle",
+        "@gazelle//language",
         "@gazelle//rule",
     ],
 )
