@@ -8,6 +8,20 @@ bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.8.1")
 bazel_dep(name = "gazelle", version = "0.44.0")
 bazel_dep(name = "rules_go", version = "0.55.1")
+bazel_dep(name = "rules_shell", version = "0.5.0")
+bazel_dep(
+    name = "buildifier_prebuilt",
+    version = "8.2.0.2",
+)
+bazel_dep(name = "aspect_rules_lint", version = "1.5.1")
+bazel_dep(name = "rules_multitool", version = "1.7.0")
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_mod = "//:go.mod")
+
+multitool = use_extension(
+    "@rules_multitool//multitool:extension.bzl",
+    "multitool",
+)
+multitool.hub(lockfile = "//tools/lint:multitool.lock.json")
+use_repo(multitool, "multitool")

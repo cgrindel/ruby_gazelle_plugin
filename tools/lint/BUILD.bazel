@@ -1,0 +1,13 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+# Intentionally empty
+
+bzl_library(
+    name = "linters",
+    srcs = ["linters.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@aspect_rules_lint//lint:lint_test",
+        "@aspect_rules_lint//lint:shellcheck",
+    ],
+)

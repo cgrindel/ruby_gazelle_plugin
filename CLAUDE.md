@@ -1,6 +1,6 @@
 ## Markdown Guidelines
 
-- The maximum line length for markdown files is 100 characters.
+- The maximum line length for markdown files is 80 characters.
 
 ## Style Guide
 
@@ -9,4 +9,15 @@
 
 ## Development Workflow
 
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for comprehensive development workflow,
+  formatting commands, and complete style guides for all languages used in this
+  project.
+
 - Confirm the build works properly by running bazel test //...
+
+- When we add or remove Go source files, be sure to update the corresponding
+  BUILD.bazel file.
+- When make changes to the import statement for a Go source file, be sure to
+  update the corresponding BUILD.bazel file.
+- After making changes to any source file, run `bazel test //...` to ensure
+  everything works properly.

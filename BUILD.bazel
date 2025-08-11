@@ -11,7 +11,16 @@ load(
 load("@cgrindel_bazel_starlib//updatesrc:defs.bzl", "updatesrc_update_all")
 load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary")
 
+# We export the MODULE.bazel so that //tools/format:format_test can find the
+# root of the workspace.
+exports_files(["MODULE.bazel"])
+
 # MARK: - Tidy / Update Source Files
+
+alias(
+    name = "format",
+    actual = "//tools/format",
+)
 
 updatesrc_update_all(name = "update_all")
 
@@ -22,6 +31,7 @@ tidy(
         ":update_all",
         ":go_mod_tidy",
         ":update_build_files",
+        ":format",
     ],
 )
 
@@ -32,6 +42,7 @@ tidy(
     targets = [
         ":update_all",
         ":update_build_files",
+        ":format",
     ],
 )
 
@@ -41,6 +52,22 @@ tidy(
         ":go_get_latest",
         ":go_mod_tidy",
     ],
+)
+
+# MARK: - YAML
+
+filegroup(
+    name = "yamlfmt_yml",
+    srcs = [".yamlfmt.yml"],
+    visibility = ["//tools/yamlfmt:__subpackages__"],
+)
+
+# MARK: - Shellcheck
+
+filegroup(
+    name = "shellcheckrc",
+    srcs = [".shellcheckrc"],
+    visibility = ["//tools/lint:__subpackages__"],
 )
 
 # MARK: - Bazel Starlark Lint and Formatting

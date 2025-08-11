@@ -1,0 +1,9 @@
+load(":format.bzl", "format")
+
+format(
+    name = "format",
+    shell = "//tools/shfmt",
+    starlark = "@buildifier_prebuilt//:buildifier",
+    visibility = ["//:__subpackages__"],
+    yaml = "//tools/yamlfmt",
+)

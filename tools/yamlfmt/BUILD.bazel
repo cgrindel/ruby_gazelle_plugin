@@ -1,0 +1,36 @@
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//tools/lint:linters.bzl", "shellcheck_test")
+
+sh_binary(
+    name = "yamlfmt",
+    srcs = ["yamlfmt.sh"],
+    data = [
+        "//:yamlfmt_yml",
+        "@aspect_rules_lint//format:yamlfmt",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
+sh_test(
+    name = "yamlfmt_test",
+    srcs = ["yamlfmt_test.sh"],
+    data = [
+        ":yamlfmt",
+    ],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+        "@cgrindel_bazel_starlib//shlib/lib:assertions",
+    ],
+)
+
+shellcheck_test(
+    name = "shellcheck_test",
+    srcs = [
+        ":yamlfmt",
+        ":yamlfmt_test",
+    ],
+)

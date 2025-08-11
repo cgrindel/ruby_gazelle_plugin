@@ -1,0 +1,4 @@
+# Shellcheck configuration
+
+# NOTE: This file is empty at the moment. However, it needs to exist for the 
+# lint_shellcheck_aspect config attribute.
