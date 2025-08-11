@@ -115,8 +115,6 @@ This repository includes pre-configured settings for Claude Code:
 [claude-code]: https://www.anthropic.com/claude-code
 [conventional-commits]: https://www.conventionalcommits.org/en/v1.0.0/
 [gh-linking]: https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue
-[git-worktree-docs]: https://git-scm.com/docs/git-worktree
-[git-worktree-tutorial]: https://www.google.com/search?q=git+worktree+tutorial
 [github-actions]: https://github.com/features/actions
 [markdown-style]: https://google.github.io/styleguide/docguide/style.html
 [prettier]: https://prettier.io/
