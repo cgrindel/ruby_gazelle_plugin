@@ -4,9 +4,22 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/rule"
 	"github.com/cgrindel/ruby_gazelle_plugin/gazelle"
+	"github.com/cgrindel/ruby_gazelle_plugin/gazelle/internal/rubycfg"
 )
+
+func TestKnownDirectives(t *testing.T) {
+	lang := &gazelle.RubyLang{}
+
+	directives := lang.KnownDirectives()
+	expected := []string{"ruby_bundle_repo"}
+
+	if !reflect.DeepEqual(directives, expected) {
+		t.Errorf("KnownDirectives() = %v, want %v", directives, expected)
+	}
+}
 
 func TestApparentLoads(t *testing.T) {
 	lang := &gazelle.RubyLang{}
@@ -146,6 +159,77 @@ func TestConvertRequireRelativeToLabel(t *testing.T) {
 			if got != tt.expected {
 				t.Errorf("convertRequireRelativeToLabel(%q, %q) = %q, want %q",
 					tt.currentPackage, tt.requiredPath, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestConfigure(t *testing.T) {
+	tests := []struct {
+		name           string
+		config         *config.Config
+		rel            string
+		directives     []rule.Directive
+		expectedBundle string
+	}{
+		{
+			name:           "nil file",
+			config:         &config.Config{},
+			rel:            "",
+			directives:     nil,
+			expectedBundle: "bundle", // default value
+		},
+		{
+			name:   "ruby_bundle_repo directive",
+			config: &config.Config{},
+			rel:    "",
+			directives: []rule.Directive{
+				{Key: "ruby_bundle_repo", Value: "my_gems"},
+			},
+			expectedBundle: "my_gems",
+		},
+		{
+			name:   "multiple directives",
+			config: &config.Config{},
+			rel:    "",
+			directives: []rule.Directive{
+				{Key: "other_directive", Value: "ignored"},
+				{Key: "ruby_bundle_repo", Value: "custom_bundle"},
+				{Key: "another_directive", Value: "also_ignored"},
+			},
+			expectedBundle: "custom_bundle",
+		},
+		{
+			name: "override existing config",
+			config: func() *config.Config {
+				c := &config.Config{}
+				rc := &rubycfg.RubyConfig{BundleRepoName: "old_bundle"}
+				rubycfg.SetRubyConfig(c, rc)
+				return c
+			}(),
+			rel: "",
+			directives: []rule.Directive{
+				{Key: "ruby_bundle_repo", Value: "new_bundle"},
+			},
+			expectedBundle: "new_bundle",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lang := &gazelle.RubyLang{}
+
+			var f *rule.File
+			if tt.directives != nil {
+				f = &rule.File{Directives: tt.directives}
+			}
+
+			lang.Configure(tt.config, tt.rel, f)
+
+			rubyConfig := rubycfg.GetRubyConfig(tt.config)
+			if rubyConfig.BundleRepoName != tt.expectedBundle {
+				t.Errorf("Configure() set BundleRepoName = %q, want %q",
+					rubyConfig.BundleRepoName, tt.expectedBundle)
 			}
 		})
 	}

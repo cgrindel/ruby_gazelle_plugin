@@ -13,6 +13,7 @@ import (
 	"github.com/bazelbuild/bazel-gazelle/repo"
 	"github.com/bazelbuild/bazel-gazelle/resolve"
 	"github.com/bazelbuild/bazel-gazelle/rule"
+	"github.com/cgrindel/ruby_gazelle_plugin/gazelle/internal/rubycfg"
 )
 
 const rubyName = "ruby"
@@ -41,10 +42,25 @@ func (*RubyLang) CheckFlags(fs *flag.FlagSet, c *config.Config) error {
 }
 
 func (*RubyLang) KnownDirectives() []string {
-	return nil
+	return []string{
+		"ruby_bundle_repo",
+	}
 }
 
-func (*RubyLang) Configure(c *config.Config, rel string, f *rule.File) {}
+func (*RubyLang) Configure(c *config.Config, rel string, f *rule.File) {
+	rubyConfig := rubycfg.GetRubyConfig(c)
+
+	if f != nil {
+		for _, d := range f.Directives {
+			switch d.Key {
+			case "ruby_bundle_repo":
+				rubyConfig.BundleRepoName = d.Value
+			}
+		}
+	}
+
+	rubycfg.SetRubyConfig(c, rubyConfig)
+}
 
 func (*RubyLang) Imports(
 	c *config.Config, r *rule.Rule, f *rule.File,
