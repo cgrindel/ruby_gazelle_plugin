@@ -1,0 +1,39 @@
+load("@cgrindel_bazel_starlib//bzlformat:defs.bzl", "bzlformat_pkg")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gazelle",
+    srcs = [
+        "generate.go",
+        "language.go",
+        "plugin.go",
+    ],
+    importpath = "github.com/cgrindel/ruby_gazelle_plugin/gazelle",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gazelle/internal/rubycfg",
+        "@gazelle//config",
+        "@gazelle//label",
+        "@gazelle//language",
+        "@gazelle//repo",
+        "@gazelle//resolve",
+        "@gazelle//rule",
+    ],
+)
+
+go_test(
+    name = "gazelle_test",
+    srcs = [
+        "generate_test.go",
+        "language_test.go",
+    ],
+    deps = [
+        ":gazelle",
+        "//gazelle/internal/rubycfg",
+        "@gazelle//config",
+        "@gazelle//language",
+        "@gazelle//rule",
+    ],
+)
+
+bzlformat_pkg(name = "bzlformat")

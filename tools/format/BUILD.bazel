@@ -1,0 +1,12 @@
+load("@cgrindel_bazel_starlib//bzlformat:defs.bzl", "bzlformat_pkg")
+load(":format.bzl", "format")
+
+format(
+    name = "format",
+    shell = "//tools/shfmt",
+    starlark = "@buildifier_prebuilt//:buildifier",
+    visibility = ["//:__subpackages__"],
+    yaml = "//tools/yamlfmt",
+)
+
+bzlformat_pkg(name = "bzlformat")

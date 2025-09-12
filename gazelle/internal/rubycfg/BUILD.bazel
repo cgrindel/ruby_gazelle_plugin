@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "rubycfg",
+    srcs = ["ruby_config.go"],
+    importpath = "github.com/cgrindel/ruby_gazelle_plugin/gazelle/internal/rubycfg",
+    visibility = ["//gazelle:__subpackages__"],
+    deps = ["@gazelle//config"],
+)
+
+go_test(
+    name = "rubycfg_test",
+    srcs = ["ruby_config_test.go"],
+    deps = [
+        ":rubycfg",
+        "@gazelle//config",
+    ],
+)

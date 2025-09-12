@@ -1,0 +1,128 @@
+load(
+    "@cgrindel_bazel_starlib//bzlformat:defs.bzl",
+    "bzlformat_missing_pkgs",
+    "bzlformat_pkg",
+)
+load("@cgrindel_bazel_starlib//bzltidy:defs.bzl", "tidy")
+load(
+    "@cgrindel_bazel_starlib//shlib/rules:execute_binary.bzl",
+    "execute_binary",
+)
+load("@cgrindel_bazel_starlib//updatesrc:defs.bzl", "updatesrc_update_all")
+load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary")
+
+# We export the MODULE.bazel so that //tools/format:format_test can find the
+# root of the workspace.
+exports_files(["MODULE.bazel"])
+
+# MARK: - Tidy / Update Source Files
+
+alias(
+    name = "format",
+    actual = "//tools/format",
+)
+
+updatesrc_update_all(name = "update_all")
+
+tidy(
+    name = "tidy",
+    targets = [
+        ":bzlformat_missing_pkgs_fix",
+        ":update_all",
+        ":go_mod_tidy",
+        ":update_build_files",
+        ":format",
+    ],
+)
+
+# This is meant to be fast and convenient to quickly update the source files
+# with the latest.
+tidy(
+    name = "update_files",
+    targets = [
+        ":update_all",
+        ":update_build_files",
+        ":format",
+    ],
+)
+
+tidy(
+    name = "upgrade_go_deps",
+    targets = [
+        ":go_get_latest",
+        ":go_mod_tidy",
+    ],
+)
+
+# MARK: - YAML
+
+filegroup(
+    name = "yamlfmt_yml",
+    srcs = [".yamlfmt.yml"],
+    visibility = ["//tools/yamlfmt:__subpackages__"],
+)
+
+# MARK: - Shellcheck
+
+filegroup(
+    name = "shellcheckrc",
+    srcs = [".shellcheckrc"],
+    visibility = ["//tools/lint:__subpackages__"],
+)
+
+# MARK: - Bazel Starlark Lint and Formatting
+
+bzlformat_pkg(name = "bzlformat")
+
+bzlformat_missing_pkgs(name = "bzlformat_missing_pkgs")
+
+# MARK: - Gazelle
+
+# gazelle:prefix github.com/cgrindel/ruby_gazelle_plugin
+
+gazelle_binary(
+    name = "gazelle_bin",
+    languages = DEFAULT_LANGUAGES + [
+        "@bazel_skylib_gazelle_plugin//bzl",
+    ],
+)
+
+gazelle(
+    name = "update_build_files",
+    gazelle = ":gazelle_bin",
+)
+
+gazelle(
+    name = "update_go_deps",
+    args = [
+        "-from_file=go.mod",
+        "-to_macro=deps.bzl%go_dependencies",
+        "-prune",
+    ],
+    command = "update-repos",
+    gazelle = ":gazelle_bin",
+)
+
+# MARK: - Go
+
+execute_binary(
+    name = "go_mod_tidy",
+    arguments = [
+        "mod",
+        "tidy",
+    ],
+    binary = "@rules_go//go",
+    execute_in_workspace = True,
+)
+
+execute_binary(
+    name = "go_get_latest",
+    arguments = [
+        "get",
+        "-t",
+        "-u",
+        "./...",
+    ],
+    binary = "@rules_go//go",
+    execute_in_workspace = True,
+)

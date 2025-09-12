@@ -1,0 +1,38 @@
+load("@cgrindel_bazel_starlib//bzlformat:defs.bzl", "bzlformat_pkg")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//tools/lint:linters.bzl", "shellcheck_test")
+
+sh_binary(
+    name = "shfmt",
+    srcs = ["shfmt.sh"],
+    data = [
+        "@aspect_rules_lint//format:shfmt",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
+sh_test(
+    name = "shfmt_test",
+    srcs = ["shfmt_test.sh"],
+    data = [
+        ":shfmt",
+    ],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+        "@cgrindel_bazel_starlib//shlib/lib:assertions",
+    ],
+)
+
+shellcheck_test(
+    name = "shellcheck_test",
+    srcs = [
+        ":shfmt",
+        ":shfmt_test",
+    ],
+)
+
+bzlformat_pkg(name = "bzlformat")
