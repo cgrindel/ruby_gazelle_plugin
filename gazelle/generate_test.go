@@ -6,8 +6,10 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/language"
 	"github.com/cgrindel/ruby_gazelle_plugin/gazelle"
+	"github.com/cgrindel/ruby_gazelle_plugin/gazelle/internal/rubycfg"
 )
 
 func TestGenerateRules(t *testing.T) {
@@ -252,5 +254,156 @@ func TestGenerateRulesErrorHandling(t *testing.T) {
 	deps := rule.AttrStrings("deps")
 	if len(deps) != 0 {
 		t.Errorf("Generated rule deps = %v, want []", deps)
+	}
+}
+
+func TestGenerateRulesWithRequireStatements(t *testing.T) {
+	tests := []struct {
+		name         string
+		files        map[string]string
+		regularFiles []string
+		bundleRepo   string
+		rel          string
+		want         int
+		wantSrcs     []string
+		wantDeps     []string
+	}{
+		{
+			name: "single require statement",
+			files: map[string]string{
+				"main.rb": "require 'json'\nputs 'Hello, World!'",
+			},
+			regularFiles: []string{"main.rb"},
+			bundleRepo:   "my_gems",
+			rel:          "",
+			want:         1,
+			wantSrcs:     []string{"main.rb"},
+			wantDeps:     []string{"@my_gems"},
+		},
+		{
+			name: "multiple require statements",
+			files: map[string]string{
+				"main.rb": "require 'json'\nrequire 'yaml'\nputs 'Hello!'",
+			},
+			regularFiles: []string{"main.rb"},
+			bundleRepo:   "bundle",
+			rel:          "",
+			want:         1,
+			wantSrcs:     []string{"main.rb"},
+			wantDeps:     []string{"@bundle"},
+		},
+		{
+			name: "require and require_relative mixed",
+			files: map[string]string{
+				"main.rb": "require 'json'\nrequire_relative 'helper'",
+			},
+			regularFiles: []string{"main.rb"},
+			bundleRepo:   "my_bundle",
+			rel:          "",
+			want:         1,
+			wantSrcs:     []string{"main.rb"},
+			wantDeps:     []string{":helper", "@my_bundle"},
+		},
+		{
+			name: "no bundle repo configured",
+			files: map[string]string{
+				"main.rb": "require 'json'\nputs 'Hello!'",
+			},
+			regularFiles: []string{"main.rb"},
+			bundleRepo:   "", // no bundle repo explicitly set
+			rel:          "",
+			want:         1,
+			wantSrcs:     []string{"main.rb"},
+			wantDeps:     []string{"@bundle"}, // uses default "bundle"
+		},
+		{
+			name: "duplicate require statements",
+			files: map[string]string{
+				"main.rb":  "require 'json'\nrequire 'yaml'",
+				"other.rb": "require 'json'\nrequire 'csv'",
+			},
+			regularFiles: []string{"main.rb", "other.rb"},
+			bundleRepo:   "gems",
+			rel:          "",
+			want:         1,
+			wantSrcs:     []string{"main.rb", "other.rb"},
+			wantDeps:     []string{"@gems"},
+		},
+		{
+			name: "require with double quotes",
+			files: map[string]string{
+				"main.rb": "require \"json\"\nrequire \"yaml\"",
+			},
+			regularFiles: []string{"main.rb"},
+			bundleRepo:   "bundle",
+			rel:          "",
+			want:         1,
+			wantSrcs:     []string{"main.rb"},
+			wantDeps:     []string{"@bundle"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir, err := os.MkdirTemp("", "gazelle_test")
+			if err != nil {
+				t.Fatalf("Failed to create temp dir: %v", err)
+			}
+			defer os.RemoveAll(tmpDir) // nolint:errcheck
+
+			for fileName, content := range tt.files {
+				filePath := filepath.Join(tmpDir, fileName)
+				if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+					t.Fatalf("Failed to write file %s: %v", fileName, err)
+				}
+			}
+
+			// Create config with bundle repo
+			c := &config.Config{}
+			if tt.bundleRepo != "" {
+				rubyConfig := &rubycfg.RubyConfig{
+					BundleRepoName: tt.bundleRepo,
+				}
+				rubycfg.SetRubyConfig(c, rubyConfig)
+			}
+
+			args := language.GenerateArgs{
+				Config:       c,
+				Dir:          tmpDir,
+				Rel:          tt.rel,
+				RegularFiles: tt.regularFiles,
+			}
+
+			lang := &gazelle.RubyLang{}
+			result := lang.GenerateRules(args)
+
+			if len(result.Gen) != tt.want {
+				t.Errorf("GenerateRules() generated %d rules, want %d",
+					len(result.Gen), tt.want)
+				return
+			}
+
+			if tt.want == 0 {
+				return
+			}
+
+			rule := result.Gen[0]
+			if rule.Kind() != "rb_library" {
+				t.Errorf("Generated rule kind = %s, want rb_library",
+					rule.Kind())
+			}
+
+			srcs := rule.AttrStrings("srcs")
+			if !reflect.DeepEqual(srcs, tt.wantSrcs) {
+				t.Errorf("Generated rule srcs = %v, want %v",
+					srcs, tt.wantSrcs)
+			}
+
+			deps := rule.AttrStrings("deps")
+			if !reflect.DeepEqual(deps, tt.wantDeps) {
+				t.Errorf("Generated rule deps = %v, want %v",
+					deps, tt.wantDeps)
+			}
+		})
 	}
 }

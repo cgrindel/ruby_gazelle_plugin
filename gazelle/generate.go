@@ -8,10 +8,14 @@ import (
 
 	"github.com/bazelbuild/bazel-gazelle/language"
 	"github.com/bazelbuild/bazel-gazelle/rule"
+	"github.com/cgrindel/ruby_gazelle_plugin/gazelle/internal/rubycfg"
 )
 
 // Regular expression to match require_relative statements in Ruby files
 var requireRelativeRegex = regexp.MustCompile(`require_relative\s+["']([^"']+)["']`)
+
+// Regular expression to match require statements in Ruby files
+var requireRegex = regexp.MustCompile(`require\s+["']([^"']+)["']`)
 
 func (*RubyLang) GenerateRules(
 	args language.GenerateArgs,
@@ -32,7 +36,12 @@ func (*RubyLang) GenerateRules(
 		return result
 	}
 
-	// Parse each Ruby file for require_relative statements
+	// Get bundle repository name from configuration
+	rubyConfig := rubycfg.GetRubyConfig(args.Config)
+	bundleRepo := rubyConfig.BundleRepoName
+	hasRequireStatements := false
+
+	// Parse each Ruby file for require_relative and require statements
 	for _, rubyFile := range rubyFiles {
 		filePath := filepath.Join(args.Dir, rubyFile)
 		content, err := os.ReadFile(filePath)
@@ -52,6 +61,18 @@ func (*RubyLang) GenerateRules(
 				}
 			}
 		}
+
+		// Check for require statements
+		requireMatches := requireRegex.FindAllStringSubmatch(string(content), -1)
+		if len(requireMatches) > 0 {
+			hasRequireStatements = true
+		}
+	}
+
+	// Add bundle repository dependency if any require statements found
+	if hasRequireStatements {
+		depLabel := "@" + bundleRepo
+		dependencies = append(dependencies, depLabel)
 	}
 
 	// Remove duplicates from dependencies
